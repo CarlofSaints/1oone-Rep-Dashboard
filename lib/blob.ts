@@ -1,13 +1,14 @@
-import { get, put, del } from '@vercel/blob';
+import { list, put, del } from '@vercel/blob';
 
 export async function readJson<T>(key: string, fallback: T): Promise<T> {
   try {
-    const result = await get(key, { access: 'public', useCache: false });
-    if (result && result.statusCode === 200) {
-      const text = await new Response(result.stream).text();
-      return JSON.parse(text) as T;
-    }
-    return fallback;
+    const { blobs } = await list({ prefix: key, limit: 1 });
+    const match = blobs.find(b => b.pathname === key);
+    if (!match) return fallback;
+    const res = await fetch(match.url, { cache: 'no-store' });
+    if (!res.ok) return fallback;
+    const text = await res.text();
+    return JSON.parse(text) as T;
   } catch {
     return fallback;
   }
