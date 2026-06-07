@@ -2,7 +2,7 @@ import { get, put, del } from '@vercel/blob';
 
 export async function readJson<T>(key: string, fallback: T): Promise<T> {
   try {
-    const result = await get(key, { access: 'private', useCache: false });
+    const result = await get(key, { access: 'public', useCache: false });
     if (result && result.statusCode === 200) {
       const text = await new Response(result.stream).text();
       return JSON.parse(text) as T;
@@ -15,7 +15,7 @@ export async function readJson<T>(key: string, fallback: T): Promise<T> {
 
 export async function writeJson<T>(key: string, data: T): Promise<void> {
   await put(key, JSON.stringify(data, null, 2), {
-    access: 'private',
+    access: 'public',
     addRandomSuffix: false,
     allowOverwrite: true,
     contentType: 'application/json',
