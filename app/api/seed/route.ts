@@ -4,9 +4,9 @@ import { loadUsers, saveUsers, User } from '@/lib/userData';
 
 export const dynamic = 'force-dynamic';
 
-export async function POST(req: NextRequest) {
+export async function GET(req: NextRequest) {
   try {
-    const { secret } = await req.json();
+    const secret = req.nextUrl.searchParams.get('secret');
     if (secret !== '1oone-seed-2026') {
       return NextResponse.json({ error: 'Invalid secret' }, { status: 403 });
     }
@@ -31,7 +31,8 @@ export async function POST(req: NextRequest) {
     await saveUsers([seedUser]);
     return NextResponse.json({ ok: true, user: seedUser.email });
   } catch (err) {
-    console.error('Seed error:', err);
-    return NextResponse.json({ error: 'Seed failed' }, { status: 500 });
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error('Seed error:', msg);
+    return NextResponse.json({ error: 'Seed failed', detail: msg }, { status: 500 });
   }
 }
