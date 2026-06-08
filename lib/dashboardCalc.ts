@@ -9,8 +9,11 @@ export interface RepDaySummary {
   firstCheckIn: string;
   lastCheckOut: string;
   hoursWorked: number;
-  storesVisited: number;
-  storesScheduled: number;
+  totalVisits: number;
+  scheduledVisits: number;
+  unscheduledVisits: number;
+  expectedVisits: number;
+  uniqueStoresVisited: number;
   stores: StoreVisitDetail[];
 }
 
@@ -29,8 +32,10 @@ export interface RepMTDSummary {
   repName: string;
   daysWorked: number;
   avgHoursPerDay: number;
-  totalStoresVisited: number;
-  totalStoresScheduled: number;
+  totalVisits: number;
+  scheduledVisits: number;
+  unscheduledVisits: number;
+  expectedVisits: number;
   adherencePercent: number;
 }
 
@@ -87,12 +92,14 @@ export function buildRepDaySummaries(
     // Get scheduled stores for this rep on this date
     const dateObj = new Date(date + 'T00:00:00');
     const scheduled = getScheduledStores(callCycle, repEmail, dateObj);
-    const scheduledCodes = new Set(scheduled.map(s => (s.storeCode || s.storeName).toLowerCase()));
+    const scheduledCodes = new Set(scheduled.map(s => s.storeCode.toLowerCase()));
 
     let firstCheckIn = '99:99';
     let lastCheckOut = '00:00';
     const storeDetails: StoreVisitDetail[] = [];
     const visitedStores = new Set<string>();
+    let scheduledVisitCount = 0;
+    let unscheduledVisitCount = 0;
 
     for (const v of dayVisits) {
       if (v.checkInTime && v.checkInTime < firstCheckIn) firstCheckIn = v.checkInTime;
@@ -100,6 +107,13 @@ export function buildRepDaySummaries(
 
       const storeKey = (v.storeCode || v.storeName).toLowerCase();
       visitedStores.add(storeKey);
+
+      const isScheduled = scheduledCodes.has(storeKey);
+      if (isScheduled) {
+        scheduledVisitCount++;
+      } else {
+        unscheduledVisitCount++;
+      }
 
       let durationMinutes = parseDuration(v.visitDuration);
       if (durationMinutes === 0) {
@@ -117,7 +131,7 @@ export function buildRepDaySummaries(
         checkIn: v.checkInTime,
         checkOut: v.checkOutTime,
         durationMinutes,
-        scheduled: scheduledCodes.has(storeKey),
+        scheduled: isScheduled,
       });
     }
 
@@ -138,8 +152,11 @@ export function buildRepDaySummaries(
       firstCheckIn,
       lastCheckOut,
       hoursWorked: Math.round(hoursWorked * 100) / 100,
-      storesVisited: visitedStores.size,
-      storesScheduled: scheduled.length,
+      totalVisits: dayVisits.length,
+      scheduledVisits: scheduledVisitCount,
+      unscheduledVisits: unscheduledVisitCount,
+      expectedVisits: scheduled.length,
+      uniqueStoresVisited: visitedStores.size,
       stores: storeDetails,
     });
   }
@@ -149,6 +166,7 @@ export function buildRepDaySummaries(
 
 /**
  * Aggregate day summaries into MTD per-rep summary.
+ * Adherence = scheduledVisits / expectedVisits * 100
  */
 export function buildMTDSummary(daySummaries: RepDaySummary[]): RepMTDSummary[] {
   const byRep = new Map<string, RepDaySummary[]>();
@@ -161,18 +179,22 @@ export function buildMTDSummary(daySummaries: RepDaySummary[]): RepMTDSummary[] 
   const results: RepMTDSummary[] = [];
   for (const [repEmail, days] of byRep) {
     const totalHours = days.reduce((sum, d) => sum + d.hoursWorked, 0);
-    const totalVisited = days.reduce((sum, d) => sum + d.storesVisited, 0);
-    const totalScheduled = days.reduce((sum, d) => sum + d.storesScheduled, 0);
+    const totalVisits = days.reduce((sum, d) => sum + d.totalVisits, 0);
+    const scheduledVisits = days.reduce((sum, d) => sum + d.scheduledVisits, 0);
+    const unscheduledVisits = days.reduce((sum, d) => sum + d.unscheduledVisits, 0);
+    const expectedVisits = days.reduce((sum, d) => sum + d.expectedVisits, 0);
 
     results.push({
       repEmail,
       repName: days[0].repName,
       daysWorked: days.length,
       avgHoursPerDay: days.length > 0 ? Math.round((totalHours / days.length) * 100) / 100 : 0,
-      totalStoresVisited: totalVisited,
-      totalStoresScheduled: totalScheduled,
-      adherencePercent: totalScheduled > 0
-        ? Math.round((totalVisited / totalScheduled) * 100)
+      totalVisits,
+      scheduledVisits,
+      unscheduledVisits,
+      expectedVisits,
+      adherencePercent: expectedVisits > 0
+        ? Math.round((scheduledVisits / expectedVisits) * 100)
         : 0,
     });
   }

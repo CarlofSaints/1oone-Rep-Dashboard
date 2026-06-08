@@ -32,10 +32,18 @@ export async function GET(req: NextRequest) {
   const daySummaries = buildRepDaySummaries(allVisits, callCycle, from, to);
   const mtdSummary = buildMTDSummary(daySummaries);
 
+  const totalVisits = daySummaries.reduce((sum, d) => sum + d.totalVisits, 0);
+  const totalScheduledVisits = daySummaries.reduce((sum, d) => sum + d.scheduledVisits, 0);
+  const totalUnscheduledVisits = daySummaries.reduce((sum, d) => sum + d.unscheduledVisits, 0);
+  const totalExpectedVisits = daySummaries.reduce((sum, d) => sum + d.expectedVisits, 0);
+
   return NextResponse.json({
     daySummaries,
     mtdSummary,
-    totalVisits: allVisits.filter(v => v.checkInDate >= from && v.checkInDate <= to).length,
+    totalVisits,
+    totalScheduledVisits,
+    totalUnscheduledVisits,
+    totalExpectedVisits,
     totalReps: mtdSummary.length,
   }, { headers: noCacheHeaders() });
 }

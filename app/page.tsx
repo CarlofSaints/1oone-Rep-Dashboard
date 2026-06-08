@@ -10,8 +10,10 @@ interface RepMTDSummary {
   repName: string;
   daysWorked: number;
   avgHoursPerDay: number;
-  totalStoresVisited: number;
-  totalStoresScheduled: number;
+  totalVisits: number;
+  scheduledVisits: number;
+  unscheduledVisits: number;
+  expectedVisits: number;
   adherencePercent: number;
 }
 
@@ -32,8 +34,11 @@ interface RepDaySummary {
   firstCheckIn: string;
   lastCheckOut: string;
   hoursWorked: number;
-  storesVisited: number;
-  storesScheduled: number;
+  totalVisits: number;
+  scheduledVisits: number;
+  unscheduledVisits: number;
+  expectedVisits: number;
+  uniqueStoresVisited: number;
   stores: StoreVisitDetail[];
 }
 
@@ -41,10 +46,13 @@ interface DashboardData {
   daySummaries: RepDaySummary[];
   mtdSummary: RepMTDSummary[];
   totalVisits: number;
+  totalScheduledVisits: number;
+  totalUnscheduledVisits: number;
+  totalExpectedVisits: number;
   totalReps: number;
 }
 
-type SortCol = 'repName' | 'daysWorked' | 'avgHoursPerDay' | 'totalStoresVisited' | 'totalStoresScheduled' | 'adherencePercent';
+type SortCol = 'repName' | 'daysWorked' | 'avgHoursPerDay' | 'totalVisits' | 'scheduledVisits' | 'unscheduledVisits' | 'expectedVisits' | 'adherencePercent';
 
 function getMonthRange(): { from: string; to: string } {
   const now = new Date();
@@ -133,7 +141,9 @@ export default function DashboardPage() {
   }
 
   const totalVisits = data?.totalVisits ?? 0;
-  const totalReps = data?.totalReps ?? 0;
+  const totalScheduled = data?.totalScheduledVisits ?? 0;
+  const totalUnscheduled = data?.totalUnscheduledVisits ?? 0;
+  const totalExpected = data?.totalExpectedVisits ?? 0;
   const avgAdherence = sortedMTD.length > 0
     ? Math.round(sortedMTD.reduce((s, r) => s + r.adherencePercent, 0) / sortedMTD.length)
     : 0;
@@ -159,15 +169,23 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* KPI Cards */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
+        {/* KPI Cards — 6 cards */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
           <div className="kpi-card">
             <div style={{ color: '#6b7280', fontSize: '0.75rem', marginBottom: 4 }}>Total Visits</div>
             <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#E04E2A' }}>{loading ? '...' : totalVisits}</div>
           </div>
           <div className="kpi-card">
-            <div style={{ color: '#6b7280', fontSize: '0.75rem', marginBottom: 4 }}>Active Reps</div>
-            <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#3D6273' }}>{loading ? '...' : totalReps}</div>
+            <div style={{ color: '#6b7280', fontSize: '0.75rem', marginBottom: 4 }}>Scheduled</div>
+            <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#16a34a' }}>{loading ? '...' : totalScheduled}</div>
+          </div>
+          <div className="kpi-card">
+            <div style={{ color: '#6b7280', fontSize: '0.75rem', marginBottom: 4 }}>Unscheduled</div>
+            <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#d97706' }}>{loading ? '...' : totalUnscheduled}</div>
+          </div>
+          <div className="kpi-card">
+            <div style={{ color: '#6b7280', fontSize: '0.75rem', marginBottom: 4 }}>Expected</div>
+            <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#3D6273' }}>{loading ? '...' : totalExpected}</div>
           </div>
           <div className="kpi-card">
             <div style={{ color: '#6b7280', fontSize: '0.75rem', marginBottom: 4 }}>Avg Adherence</div>
@@ -210,8 +228,10 @@ export default function DashboardPage() {
                     <th onClick={() => handleSort('repName')}>Rep Name{sortArrow('repName')}</th>
                     <th onClick={() => handleSort('daysWorked')}>Days Worked{sortArrow('daysWorked')}</th>
                     <th onClick={() => handleSort('avgHoursPerDay')}>Avg Hrs/Day{sortArrow('avgHoursPerDay')}</th>
-                    <th onClick={() => handleSort('totalStoresVisited')}>Stores Visited{sortArrow('totalStoresVisited')}</th>
-                    <th onClick={() => handleSort('totalStoresScheduled')}>Stores Scheduled{sortArrow('totalStoresScheduled')}</th>
+                    <th onClick={() => handleSort('totalVisits')}>Total Visits{sortArrow('totalVisits')}</th>
+                    <th onClick={() => handleSort('scheduledVisits')}>Scheduled{sortArrow('scheduledVisits')}</th>
+                    <th onClick={() => handleSort('unscheduledVisits')}>Unscheduled{sortArrow('unscheduledVisits')}</th>
+                    <th onClick={() => handleSort('expectedVisits')}>Expected{sortArrow('expectedVisits')}</th>
                     <th onClick={() => handleSort('adherencePercent')}>Adherence %{sortArrow('adherencePercent')}</th>
                     <th style={{ cursor: 'default' }}></th>
                   </tr>
@@ -222,8 +242,10 @@ export default function DashboardPage() {
                       <td style={{ fontWeight: 500 }}>{rep.repName}</td>
                       <td>{rep.daysWorked}</td>
                       <td>{rep.avgHoursPerDay}</td>
-                      <td>{rep.totalStoresVisited}</td>
-                      <td>{rep.totalStoresScheduled}</td>
+                      <td>{rep.totalVisits}</td>
+                      <td style={{ color: '#16a34a', fontWeight: 500 }}>{rep.scheduledVisits}</td>
+                      <td style={{ color: rep.unscheduledVisits > 0 ? '#d97706' : '#6b7280' }}>{rep.unscheduledVisits}</td>
+                      <td>{rep.expectedVisits}</td>
                       <td>
                         <span style={{
                           padding: '2px 8px', borderRadius: 12, fontSize: '0.8rem', fontWeight: 600,

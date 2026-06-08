@@ -34,16 +34,15 @@ export const DEFAULT_ROLE_PERMISSIONS: RolePermissions = {
   viewer: ['view_dashboard'],
 };
 
-export type FrequencyType = 'weekly' | 'fortnightly' | 'monthly';
-
 export interface CallCycleEntry {
   repEmail: string;
   repName: string;
-  storeName: string;
   storeCode: string;
-  day: string; // "Monday", "Tuesday", etc.
-  frequency: FrequencyType;
-  week?: number; // for fortnightly/monthly — which week(s)
+  storeName: string;
+  channel: string;
+  cycleLength: number; // e.g. 4 for a 4-week repeating cycle
+  cycleStartDate: string; // ISO date string (YYYY-MM-DD)
+  weeks: Record<number, string>; // week number (1-based) → day abbreviation ("Mon", "Tue", etc.)
 }
 
 export interface CallCycleUploadMeta {

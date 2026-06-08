@@ -7,6 +7,15 @@ import Toast from '@/components/Toast';
 import UploadZone from '@/components/UploadZone';
 import type { CallCycleEntry, CallCycleUploadMeta } from '@/lib/types';
 
+function formatSchedule(weeks: Record<number, string>): string {
+  const parts: string[] = [];
+  const keys = Object.keys(weeks).map(Number).sort((a, b) => a - b);
+  for (const k of keys) {
+    parts.push(`W${k}: ${weeks[k]}`);
+  }
+  return parts.join(', ');
+}
+
 export default function CallCyclePage() {
   const { session, loading: authLoading, logout } = useAuth();
   const [index, setIndex] = useState<CallCycleUploadMeta[]>([]);
@@ -83,7 +92,8 @@ export default function CallCyclePage() {
         e.storeName.toLowerCase().includes(q) ||
         e.storeCode.toLowerCase().includes(q) ||
         e.repName.toLowerCase().includes(q) ||
-        e.repEmail.toLowerCase().includes(q)
+        e.repEmail.toLowerCase().includes(q) ||
+        (e.channel || '').toLowerCase().includes(q)
       );
     }
     return rows;
@@ -107,7 +117,7 @@ export default function CallCyclePage() {
           <div style={{ maxWidth: 500, marginBottom: '2rem' }}>
             <UploadZone onFile={handleUpload} loading={uploading} label="Drop call cycle Excel here or click to browse" />
             <div style={{ fontSize: '0.75rem', color: '#9ca3af', marginTop: 8 }}>
-              Expected columns: Rep Email/Name, Store Name/Code, Day, Frequency (optional), Week (optional)
+              Perigee SCHEDULE format: User Email, First Name, Surname, Store ID, Store Name, Channel, Cycle, Cycle Start Date, WEEK1-WEEK4
             </div>
           </div>
         )}
@@ -163,9 +173,10 @@ export default function CallCyclePage() {
                     <th>Rep</th>
                     <th>Store Name</th>
                     <th>Store Code</th>
-                    <th>Day</th>
-                    <th>Frequency</th>
-                    <th>Week</th>
+                    <th>Channel</th>
+                    <th>Cycle</th>
+                    <th>Start Date</th>
+                    <th>Schedule</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -174,17 +185,17 @@ export default function CallCyclePage() {
                       <td style={{ fontWeight: 500 }}>{e.repName || e.repEmail}</td>
                       <td>{e.storeName}</td>
                       <td>{e.storeCode}</td>
-                      <td>{e.day}</td>
+                      <td>{e.channel || '-'}</td>
                       <td>
                         <span style={{
                           padding: '2px 8px', borderRadius: 12, fontSize: '0.75rem', fontWeight: 500,
-                          background: e.frequency === 'weekly' ? '#dbeafe' : e.frequency === 'fortnightly' ? '#fef3c7' : '#e0e7ff',
-                          color: e.frequency === 'weekly' ? '#1e40af' : e.frequency === 'fortnightly' ? '#92400e' : '#3730a3',
+                          background: '#dbeafe', color: '#1e40af',
                         }}>
-                          {e.frequency}
+                          {e.cycleLength}wk
                         </span>
                       </td>
-                      <td>{e.week ?? '-'}</td>
+                      <td style={{ fontSize: '0.8rem', color: '#6b7280' }}>{e.cycleStartDate}</td>
+                      <td style={{ fontSize: '0.8rem' }}>{formatSchedule(e.weeks)}</td>
                     </tr>
                   ))}
                 </tbody>
