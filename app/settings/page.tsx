@@ -155,10 +155,10 @@ export default function SettingsPage() {
         body: JSON.stringify(body),
       });
       if (res.ok) {
+        const data = await res.json();
         setToast({ msg: 'Settings saved', type: 'success' });
         setForm(f => ({ ...f, apiKey: '' }));
-        const r2 = await authFetch('/api/config/perigee');
-        setConfig(await r2.json());
+        if (data.config) setConfig(data.config);
       } else {
         setToast({ msg: 'Save failed', type: 'error' });
       }

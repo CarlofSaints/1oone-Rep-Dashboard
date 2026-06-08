@@ -43,7 +43,10 @@ export async function PUT(req: NextRequest) {
     };
 
     await writeJson(BLOB_KEY, updated);
-    return NextResponse.json({ ok: true }, { headers: noCacheHeaders() });
+    return NextResponse.json(
+      { ok: true, config: { ...updated, apiKey: updated.apiKey ? '••••' + updated.apiKey.slice(-4) : '' } },
+      { headers: noCacheHeaders() }
+    );
   } catch (err) {
     console.error('Perigee config error:', err);
     return NextResponse.json({ error: 'Failed' }, { status: 500 });
