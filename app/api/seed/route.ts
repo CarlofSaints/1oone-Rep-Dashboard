@@ -12,14 +12,22 @@ export async function GET(req: NextRequest) {
     }
 
     const existing = await loadUsers();
-    if (existing.length > 0) {
-      return NextResponse.json({ error: 'Already seeded', count: existing.length }, { status: 400 });
+    const seedEmail = 'carl@outerjoin.co.za';
+    const hash = await bcrypt.hash('1oone2026', 10);
+
+    const found = existing.find(u => u.email.toLowerCase() === seedEmail);
+    if (found) {
+      // Reset password for existing super admin
+      found.passwordHash = hash;
+      found.forcePasswordChange = false;
+      found.role = 'super_admin';
+      await saveUsers(existing);
+      return NextResponse.json({ ok: true, user: seedEmail, action: 'password_reset', totalUsers: existing.length });
     }
 
-    const hash = await bcrypt.hash('1oone2026', 10);
     const seedUser: User = {
       id: crypto.randomUUID(),
-      email: 'carl@outerjoin.co.za',
+      email: seedEmail,
       name: 'Carl',
       surname: 'Dos Santos',
       passwordHash: hash,
@@ -28,8 +36,9 @@ export async function GET(req: NextRequest) {
       createdAt: new Date().toISOString(),
     };
 
-    await saveUsers([seedUser]);
-    return NextResponse.json({ ok: true, user: seedUser.email });
+    existing.push(seedUser);
+    await saveUsers(existing);
+    return NextResponse.json({ ok: true, user: seedEmail, action: 'created', totalUsers: existing.length });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error('Seed error:', msg);

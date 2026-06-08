@@ -32,8 +32,8 @@ export function useAuth(requiredRole?: Role | Role[]) {
     }
     try {
       const s: Session = JSON.parse(raw);
-      if (s.forcePasswordChange && typeof window !== 'undefined' && window.location.pathname !== '/admin/users') {
-        router.replace('/admin/users?change-password=1');
+      if (s.forcePasswordChange && typeof window !== 'undefined' && window.location.pathname !== '/change-password') {
+        router.replace('/change-password');
         setLoading(false);
         return;
       }

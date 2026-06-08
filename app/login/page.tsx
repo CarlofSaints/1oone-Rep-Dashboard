@@ -31,7 +31,7 @@ export default function LoginPage() {
       }
 
       localStorage.setItem(SESSION_KEY, JSON.stringify(data));
-      window.location.href = data.forcePasswordChange ? '/admin/users?change-password=1' : '/';
+      window.location.href = data.forcePasswordChange ? '/change-password' : '/';
     } catch {
       setError('Network error');
       setLoading(false);
