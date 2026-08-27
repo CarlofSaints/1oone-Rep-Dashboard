@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import PasswordInput from '@/components/PasswordInput';
 
 const SESSION_KEY = '1oone_session';
@@ -10,6 +11,16 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [justReset, setJustReset] = useState(false);
+
+  // Set by /reset-password on success, so the landing here reads as a finished job
+  // rather than a bounce back to the start.
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get('reset') === '1') {
+      setJustReset(true);
+      window.history.replaceState({}, '', '/login');
+    }
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -63,6 +74,19 @@ export default function LoginPage() {
           </p>
         </div>
 
+        {justReset && (
+          <div
+            style={{
+              background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 8,
+              padding: '0.75rem 1rem', marginBottom: '1.25rem',
+            }}
+          >
+            <p style={{ color: '#15803d', fontSize: '0.82rem', margin: 0, lineHeight: 1.5, textAlign: 'center' }}>
+              Password updated. Sign in with your new password.
+            </p>
+          </div>
+        )}
+
         <form onSubmit={handleSubmit}>
           <div style={{ marginBottom: '1rem' }}>
             <label style={{ display: 'block', fontSize: '0.8rem', color: '#374151', marginBottom: 4, fontWeight: 500 }}>
@@ -101,6 +125,15 @@ export default function LoginPage() {
             {loading ? 'Signing in...' : 'Sign In'}
           </button>
         </form>
+
+        <div style={{ textAlign: 'center', marginTop: '1rem' }}>
+          <Link
+            href="/forgot-password"
+            style={{ color: '#3D6273', fontSize: '0.8rem', textDecoration: 'none', fontWeight: 500 }}
+          >
+            Forgot your password?
+          </Link>
+        </div>
       </div>
     </div>
   );
